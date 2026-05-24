@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronosat • Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-200 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="text-3xl font-bold tracking-tighter">CHRONOSAT</div>
+            <div class="text-zinc-400 text-sm">NASA Earth Observation 1970–1981</div>
+        </div>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+            <h1 class="text-2xl font-semibold mb-6">Sign in to Control Center</h1>
+
+            {% if error %}
+            <div class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg mb-4 text-sm">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" action="/login" class="space-y-4">
+                <div>
+                    <label class="text-sm text-zinc-400">Username</label>
+                    <input type="text" name="username" value="admin" 
+                           class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 mt-1 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-sm text-zinc-400">Password</label>
+                    <input type="password" name="password" value="admin123" 
+                           class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 mt-1 focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit"
+                        class="w-full bg-white text-black font-semibold py-3 rounded-xl mt-2 hover:bg-zinc-200 transition">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-6 text-xs text-zinc-500 text-center">
+                Default: admin / admin123<br>
+                Contact an administrator for a basic user account.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

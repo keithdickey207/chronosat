@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronosat Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .glass { background: rgba(24, 24, 27, 0.85); backdrop-filter: blur(12px); }
+        .stat-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .live-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .satellite-marker { filter: drop-shadow(0 0 6px rgb(163 163 172)); }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <!-- Top Nav -->
+    <nav class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 flex items-center justify-between h-16">
+            <div class="flex items-center gap-x-3">
+                <div class="text-2xl font-bold tracking-tighter">CHRONOSAT</div>
+                <div class="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">1970–1981</div>
+            </div>
+            
+            <div class="flex items-center gap-x-4 text-sm">
+                <div class="flex items-center gap-x-2">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full live-dot"></div>
+                    <span class="text-emerald-400 text-xs font-medium">LIVE SIMULATION</span>
+                </div>
+                <div class="text-zinc-500">|</div>
+                <div class="font-medium">{{ user.username }}</div>
+                <div class="px-2 py-0.5 text-xs rounded-full {{ 'bg-violet-500/20 text-violet-400' if is_admin else 'bg-zinc-700' }}">
+                    {{ 'ADMIN' if is_admin else 'BASIC' }}
+                </div>
+                <a href="/logout" class="text-zinc-400 hover:text-white text-xs">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        
+        <!-- Header -->
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <div class="text-4xl font-semibold tracking-tighter">Control Center</div>
+                <div class="text-zinc-400">Real-time historical Earth observation operations</div>
+            </div>
+            <div class="text-right text-sm text-zinc-400">
+                Simulated date: <span id="live-sim-date" class="font-mono text-white">1975-06-14</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            <!-- LIVE SIMULATOR -->
+            <div class="xl:col-span-7 bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+                    <div class="font-semibold">Live Satellite Simulator — 1975</div>
+                    <div class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400">WebSocket • Real-time</div>
+                </div>
+                
+                <div class="p-4">
+                    <div id="map" class="h-[420px] w-full rounded-2xl border border-zinc-800"></div>
+                    
+                    <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                        <div class="glass border border-zinc-800 rounded-2xl p-4">
+                            <div class="text-xs text-zinc-400">Currently Overhead (sim)</div>
+                            <div id="overhead-list" class="mt-2 space-y-1 text-xs font-mono"></div>
+                        </div>
+                        <div class="glass border border-zinc-800 rounded-2xl p-4 col-span-2">
+                            <div class="text-xs text-zinc-400 mb-1">Live Pass Updates</div>
+                            <div id="live-passes" class="text-xs font-mono text-zinc-300 leading-relaxed h-16 overflow-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Query Panel -->
+            <div class="xl:col-span-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                <div class="font-semibold mb-4">Historical Coverage Query</div>
+                
+                <form id="coverage-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-zinc-400">Latitude</label>
+                            <input type="number" step="0.01" id="lat" value="44.55" 
+                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-zinc-400">Longitude</label>
+                            <input type="number" step="0.01" id="lon" value="-69.63" 
+                                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-zinc-400">Date (1972–1981)</label>
+                        <input type="date" id="query-date" value="1975-06-14" 
+                               class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full py-3 bg-white text-black font-semibold rounded-2xl hover:bg-zinc-200 active:scale-[0.985] transition">
+                        Query Historical Coverage
+                    </button>
+                </form>
+
+                <div id="coverage-result" class="mt-4 text-xs font-mono bg-black/40 border border-zinc-800 p-4 rounded-2xl hidden whitespace-pre-wrap"></div>
+
+                <div class="mt-6">
+                    <div class="text-xs text-zinc-400 mb-2">Try Real 1970s Data (GEE)</div>
+                    <button onclick="runRealGEESearch()" 
+                            class="text-xs px-4 py-2 border border-blue-500/40 hover:bg-blue-500/10 text-blue-400 rounded-xl transition">
+                        Search Real Landsat MSS (requires GEE auth)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity & Admin Panels -->
+            <div class="xl:col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Recent Activity -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-semibold">Your Recent Activity</div>
+                    </div>
+                    <div class="space-y-2 text-sm max-h-[220px] overflow-auto pr-2">
+                        {% for item in history %}
+                        <div class="flex justify-between bg-zinc-950/70 border border-zinc-800 px-4 py-3 rounded-2xl">
+                            <div>
+                                <span class="text-emerald-400">{{ item.query_type }}</span> 
+                                <span class="text-zinc-400">{{ item.location }}</span>
+                            </div>
+                            <div class="text-xs text-zinc-500">{{ item.created_at[:16] }}</div>
+                        </div>
+                        {% else %}
+                        <div class="text-zinc-500 text-sm">No queries yet. Use the form above.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Admin Panel -->
+                {% if is_admin %}
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <div class="font-semibold mb-4 flex items-center gap-x-2">
+                        Admin Controls 
+                        <span class="text-[10px] px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded">ADMIN ONLY</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="loadAdminUsers()" 
+                                class="py-2.5 text-sm border border-zinc-700 hover:bg-zinc-800 rounded-2xl">Manage Users</button>
+                        <button onclick="loadAdminActivity()" 
+                                class="py-2.5 text-sm border border-zinc-700 hover:bg-zinc-800 rounded-2xl">View All Activity</button>
+                    </div>
+
+                    <div id="admin-panel" class="mt-4 text-xs bg-black/40 border border-zinc-800 p-4 rounded-2xl min-h-[120px] hidden"></div>
+                    
+                    <div class="mt-3">
+                        <div class="text-xs text-zinc-400 mb-1">Create Basic User</div>
+                        <form id="create-user-form" onsubmit="createUser(event)" class="flex gap-2">
+                            <input type="text" id="new-username" placeholder="username" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm">
+                            <input type="password" id="new-password" placeholder="password" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm">
+                            <button type="submit" class="px-4 bg-white text-black text-sm font-medium rounded-xl">Create</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            // Already using CDN
+        }
+
+        // Leaflet Map
+        let map;
+        let markers = {};
+
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([30, 0], 2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                className: 'map-tiles'
+            }).addTo(map);
+
+            // Demo markers for Waterville + others
+            const demoPoints = [
+                {lat: 44.55, lon: -69.63, name: "Waterville"},
+                {lat: 40.71, lon: -74.01, name: "New York"},
+                {lat: 51.51, lon: -0.13, name: "London"}
+            ];
+
+            demoPoints.forEach(p => {
+                L.circleMarker([p.lat, p.lon], {
+                    radius: 5,
+                    color: '#a1a1aa',
+                    fillColor: '#3f3f46',
+                    fillOpacity: 0.8
+                }).addTo(map).bindPopup(p.name);
+            });
+        }
+
+        // Real-time WebSocket Simulator
+        let ws;
+        function connectSimulator() {
+            ws = new WebSocket(`ws://${location.host}/ws/simulator`);
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                // Update simulated date
+                document.getElementById('live-sim-date').innerText = data.simulated_date;
+                
+                // Update overhead list
+                const overheadEl = document.getElementById('overhead-list');
+                overheadEl.innerHTML = '';
+                
+                data.updates.forEach(u => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between py-px';
+                    div.innerHTML = `
+                        <span class="text-zinc-400">${u.location.name}</span>
+                        <span class="text-emerald-400">${u.passes.length} passes</span>
+                    `;
+                    overheadEl.appendChild(div);
+                });
+
+                // Update live passes feed
+                const feed = document.getElementById('live-passes');
+                feed.innerHTML = data.updates.map(u => 
+                    `${u.location.name}: ${u.passes.map(p => p.mission).join(', ')}`
+                ).join('<br>');
+            };
+
+            ws.onclose = () => {
+                setTimeout(connectSimulator, 3000);
+            };
+        }
+
+        // Coverage Query
+        document.getElementById('coverage-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const lat = document.getElementById('lat').value;
+            const lon = document.getElementById('lon').value;
+            const queryDate = document.getElementById('query-date').value;
+            
+            const res = await fetch('/api/query/coverage', {
+                method: 'POST',
+                body: new URLSearchParams({lat, lon, query_date: queryDate})
+            });
+            
+            const data = await res.json();
+            const resultBox = document.getElementById('coverage-result');
+            resultBox.classList.remove('hidden');
+            resultBox.innerText = data.summary;
+        });
+
+        async function runRealGEESearch() {
+            const lat = document.getElementById('lat').value;
+            const lon = document.getElementById('lon').value;
+            const start = document.getElementById('query-date').value;
+            const end = document.getElementById('query-date').value;
+            
+            const res = await fetch('/api/query/real_gee', {
+                method: 'POST',
+                body: new URLSearchParams({lat, lon, start, end})
+            });
+            const data = await res.json();
+            
+            const resultBox = document.getElementById('coverage-result');
+            resultBox.classList.remove('hidden');
+            
+            if (data.success) {
+                resultBox.innerText = `Found ${data.count} real historical scenes.\n\n` + 
+                    JSON.stringify(data.scenes.slice(0,3), null, 2);
+            } else {
+                resultBox.innerText = "Error: " + data.error + "\n\nMake sure earthengine-api is authenticated.";
+            }
+        }
+
+        // Admin functions
+        async function loadAdminUsers() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.remove('hidden');
+            const res = await fetch('/api/admin/users');
+            const users = await res.json();
+            
+            let html = '<div class="font-mono text-xs">Users:\n';
+            users.forEach(u => {
+                html += `${u.username} (${u.role}) — active: ${u.is_active}\n`;
+            });
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
+        async function loadAdminActivity() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.remove('hidden');
+            const res = await fetch('/api/admin/activity');
+            const logs = await res.json();
+            
+            let html = '<div class="font-mono text-xs">Recent Activity:\n';
+            logs.slice(0,8).forEach(l => {
+                html += `${l.created_at.slice(0,16)} ${l.username} ${l.query_type}\n`;
+            });
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
+        async function createUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+            
+            const res = await fetch('/api/admin/create_user', {
+                method: 'POST',
+                body: new URLSearchParams({username, password})
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                alert('User created successfully');
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+            } else {
+                alert('Failed to create user (username may already exist)');
+            }
+        }
+
+        // Boot
+        function boot() {
+            initMap();
+            connectSimulator();
+            initTailwind();
+            
+            // Demo: highlight that real-time is running
+            console.log('%c[Chronosat] Real-time WebSocket simulator connected', 'color:#3f3f46');
+        }
+
+        window.onload = boot;
+    </script>
+</body>
+</html>
