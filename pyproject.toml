@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chronosat"
-version = "0.1.0"
+version = "0.2.0"
 description = "NASA Earth observation history 1970-1981 toolkit for mapping and 3D visualization. Query Landsat 1-3 and Skylab EREP data for historical reconstruction."
 readme = "README.md"
 license = {text = "MIT"}
@@ -26,7 +26,11 @@ chronosat = "cli:main"
 Homepage = "https://github.com/keithdickey207/chronosat"
 Repository = "https://github.com/keithdickey207/chronosat"
 Issues = "https://github.com/keithdickey207/chronosat/issues"
+Changelog = "https://github.com/keithdickey207/chronosat/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["chronosat*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "examples/*"]

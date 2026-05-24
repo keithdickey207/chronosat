@@ -2,23 +2,35 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/keithdickey207/chronosat/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![GitHub stars](https://img.shields.io/github/stars/keithdickey207/chronosat?style=social)](https://github.com/keithdickey207/chronosat)
 [![GitHub](https://img.shields.io/badge/GitHub-keithdickey207/chronosat-181717?logo=github)](https://github.com/keithdickey207/chronosat)
 
 **NASA Earth observation history (1970–1981) for mapping and 3D visualization.**
 
-Query and reconstruct what Landsat 1–3 and Skylab EREP satellites saw over any location on Earth during the earliest years of civilian satellite remote sensing.
+Reconstruct what the earliest civilian Earth-observation satellites (Landsat 1–3 and Skylab EREP) saw over any location during the 1970s and early 1980s.
 
-> **Important**: This is strictly historical/archival data. There are no live feeds from 1975.
+> **Reality check**: This is purely historical/archival work. There are no real-time feeds from 1975.
 
 ---
 
+## Why This Exists
+
+Modern satellite data (Landsat 8/9, Sentinel-2, NAIP, etc.) is abundant and high quality. The earliest years of the Landsat program (1972–1981) are much harder to work with, yet they represent the beginning of continuous global land imaging.
+
+`chronosat` gives you:
+
+- Accurate knowledge of what satellites were operating on any given date
+- Practical tools to discover and retrieve real historical imagery
+- Clear bridges to 3D visualization and creative pipelines
+
 ## Features
 
-- Authoritative mission timeline for Landsat 1, 2, 3 and Skylab (1972–1981)
-- Lightweight 18-day repeat cycle pass estimation for any lat/lon + date
-- Simulation catalog (works offline immediately)
-- Google Earth Engine integration path for real historical MSS imagery
-- Designed to plug directly into modern 3D pipelines (PyVista, Godot, etc.)
+- **Mission database** — Complete facts for Landsat 1, 2, 3 + Skylab EREP (1972–1981)
+- **Pass estimation** — Lightweight 18-day repeat cycle modeling for any location + date
+- **Offline simulation** — Works immediately with no accounts or API keys
+- **Real data access** — First-class Google Earth Engine support for actual MSS imagery
+- **Export pipeline** — One-command exports to Google Drive as GeoTIFFs
+- **Designed for creators** — Built to integrate with PyVista, rasterio, Godot, and similar tools
 
 ## Quick Start
 
@@ -26,13 +38,13 @@ Query and reconstruct what Landsat 1–3 and Skylab EREP satellites saw over any
 git clone https://github.com/keithdickey207/chronosat.git
 cd chronosat
 
-# Explore missions
+# 1. See the mission timeline
 python3 cli.py missions
 
-# What was flying over a location on a specific historical date?
+# 2. What NASA satellites were overhead on a specific historical date?
 python3 cli.py coverage --lat 44.55 --lon -69.63 --date 1975-06-14
 
-# Search for coverage windows (simulation mode)
+# 3. Find real historical coverage (simulation)
 python3 cli.py search --lat 44.55 --lon -69.63 --start 1975-01-01 --end 1975-12-31
 ```
 
@@ -42,71 +54,92 @@ python3 cli.py search --lat 44.55 --lon -69.63 --start 1975-01-01 --end 1975-12-
 pip install -e .
 ```
 
-Optional extras:
+Recommended extras:
 
 ```bash
-pip install -e ".[gee]"      # Google Earth Engine support
-pip install -e ".[viz]"      # PyVista + rasterio pipeline helpers
+pip install -e ".[gee]"     # Google Earth Engine support
+pip install -e ".[viz]"     # PyVista + raster tools for mesh generation
 ```
 
-## Real Historical Data (Google Earth Engine)
+## Real Historical Imagery (Google Earth Engine)
 
-The most complete source for 1972–1981 Landsat MSS data:
+This is the most powerful part of the project.
 
 ```bash
 pip install earthengine-api
-earthengine authenticate
+earthengine authenticate     # one-time browser login
 ```
 
-Then run searches against real data:
+Then use the new GEE module:
 
-```bash
-python3 cli.py search --lat 44.55 --lon -69.63 --start 1975-06-01 --end 1975-06-30 --real
+```python
+from chronosat.gee import search_real_scenes, export_to_drive, print_scene_summary
+
+scenes = search_real_scenes(44.55, -69.63, "1975-06-01", "1975-08-31", max_cloud=30)
+print_scene_summary(scenes)
+
+# Export the best one to your Google Drive
+export_to_drive(scenes[0], folder="chronosat_exports", wait=True)
 ```
 
-## Integration With Your Workflows
+See the full examples in the [`examples/`](examples/) directory.
 
-This project was built to extend existing modern satellite + 3D pipelines:
+## Example Scripts
 
-- Use `chronosat` to discover historically interesting dates
-- Export real MSS scenes via Google Earth Engine
-- Feed them into adapted versions of your NAIP/PyVista mesh pipelines
-- Generate 1975 vs 2025 comparison renders or time-lapse sequences
+Located in `examples/`:
 
-The orbit module can be upgraded with real historical TLEs using Skyfield + your existing `de421.bsp`.
+| Script | Purpose |
+|--------|---------|
+| `historical_waterville_timeline.py` | Timeline + pass estimation for Waterville, Maine (the location used in many modern pipelines) |
+| `export_real_mss_to_drive.py` | End-to-end: search real 1975 scenes and export GeoTIFF to Drive |
+| `feed_into_mesh_pipeline.py` | Shows how to adapt existing raster → PyVista mesh code for historical MSS data |
+
+## Integration With Modern Pipelines
+
+This tool was created specifically to extend existing modern workflows (NAIP, Sentinel, high-res 3D meshing, Godot visualization, etc.).
+
+Typical creative/research flow:
+
+1. Use `chronosat` to discover interesting historical dates for a location
+2. Export real MSS GeoTIFFs via Google Earth Engine
+3. Adapt your existing rasterio + PyVista code to handle the older 4-band, lower-resolution data
+4. Generate 1975 vs 2025 comparison renders or time-lapse sequences
+
+The orbit module can be upgraded with real historical TLEs using Skyfield (you may already have this in your environment).
 
 ## Repository Structure
 
 ```
 chronosat/
 ├── chronosat/
-│   ├── __init__.py
-│   ├── missions.py      # Mission facts & timeline
-│   ├── orbits.py        # Pass estimation
-│   └── catalog.py       # Simulation + GEE data access
+│   ├── missions.py       # Authoritative mission facts
+│   ├── orbits.py         # Pass estimation engine
+│   ├── catalog.py        # Simulation catalog
+│   ├── gee.py            # Real Google Earth Engine helpers (new)
+│   └── __init__.py
+├── examples/             # Ready-to-run demonstration scripts
 ├── cli.py
 ├── pyproject.toml
 ├── README.md
+├── CONTRIBUTING.md
+├── CHANGELOG.md
 ├── LICENSE
-└── .gitignore
+└── .github/              # Issue & PR templates
 ```
 
 ## License
 
 MIT License © 2026 [Keith Dickey](https://github.com/keithdickey207)
 
-See [LICENSE](LICENSE) for details.
-
 ## Contributing
 
-Contributions are welcome! Please open an issue or pull request on GitHub.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-Ideas for future work:
-- Full Google Earth Engine scene export helpers
-- Historical mesh generation pipeline (MSS radiometry)
-- Skyfield-based precise orbit reconstruction using archived TLEs
-- Godot exporter for time-travel visualization sequences
-- Web timeline UI
+Particularly valuable areas right now:
+- Historical TLE / precise orbit reconstruction
+- Better radiometric or atmospheric handling for early MSS
+- Godot / Blender exporters
+- More example locations and creative visualizations
 
 ## Links
 
@@ -116,4 +149,4 @@ Ideas for future work:
 
 ---
 
-Built for historical Earth observation research and creative 3D visualization projects.
+Built for historical research, creative visualization, and extending modern Earth observation pipelines into the past.
