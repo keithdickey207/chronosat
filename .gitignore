@@ -46,6 +46,7 @@ landsat-env/
 *.log
 *.mp4
 *.png
+orbital_daemon/output/
 
 # Jupyter
 .ipynb_checkpoints/
