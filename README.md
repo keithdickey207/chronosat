@@ -13,6 +13,23 @@ Reconstruct what the earliest civilian Earth-observation satellites (Landsat 1�
 
 ---
 
+## WQSH Orbital Daemon v0.1-alpha (Live Layer)
+
+This repo also ships a **zero-dependency live orbital layer** for the sovereign stack — circuit-compressed Keplerian propagation, JSON export, and a Godot 4 viewer. No pip required for the daemon.
+
+```bash
+cd orbital_daemon
+bash run_demo.sh
+# → output/orbital_positions.json
+
+# Godot twin: open orbital_daemon/godot/chronosat_viewer/ in Godot 4.3+
+python3 chronosat_daemon.py -w 2   # live refresh
+```
+
+See [`orbital_daemon/README.md`](orbital_daemon/README.md) for details.
+
+---
+
 ## Why This Exists
 
 Modern satellite data (Landsat 8/9, Sentinel-2, NAIP, etc.) is abundant and high quality. The earliest years of the Landsat program (1972–1981) are much harder to work with, yet they represent the beginning of continuous global land imaging.
@@ -31,6 +48,7 @@ Modern satellite data (Landsat 8/9, Sentinel-2, NAIP, etc.) is abundant and high
 - **Real data access** — First-class Google Earth Engine support for actual MSS imagery
 - **Export pipeline** — One-command exports to Google Drive as GeoTIFFs
 - **Designed for creators** — Built to integrate with PyVista, rasterio, Godot, and similar tools
+- **Live orbital daemon** — Stdlib Keplerian circuits + Godot viewer for real-time demos
 
 ## Quick Start
 
@@ -115,8 +133,9 @@ chronosat/
 │   ├── missions.py       # Authoritative mission facts
 │   ├── orbits.py         # Pass estimation engine
 │   ├── catalog.py        # Simulation catalog
-│   ├── gee.py            # Real Google Earth Engine helpers (new)
+│   ├── gee.py            # Real Google Earth Engine helpers
 │   └── __init__.py
+├── orbital_daemon/       # Live Keplerian layer + Godot viewer (v0.1-alpha)
 ├── examples/             # Ready-to-run demonstration scripts
 ├── cli.py
 ├── pyproject.toml
@@ -140,6 +159,7 @@ Particularly valuable areas right now:
 - Better radiometric or atmospheric handling for early MSS
 - Godot / Blender exporters
 - More example locations and creative visualizations
+- SGP4 / TLE ingestion for the live orbital daemon
 
 ## Links
 
