@@ -9,13 +9,21 @@
 
 Reconstruct what the earliest civilian Earth-observation satellites (Landsat 1–3 and Skylab EREP) saw over any location during the 1970s and early 1980s.
 
-> **Reality check**: This is purely historical/archival work. There are no real-time feeds from 1975.
+**Anchor:** Waterville, ME **04901** (`44.5520°N, 69.6317°W`) — default location in examples and sovereign stack pipelines.
+
+> **Reality check**: Historical/archival work uses real MSS archives. The live orbital daemon is a **present-day** Keplerian demo layer — not a 1975 real-time feed.
 
 ---
 
 ## WQSH Orbital Daemon v0.1-alpha (Live Layer)
 
-This repo also ships a **zero-dependency live orbital layer** for the sovereign stack — circuit-compressed Keplerian propagation, JSON export, and a Godot 4 viewer. No pip required for the daemon.
+Zero-dependency live orbital layer for the sovereign stack — circuit-compressed Keplerian propagation, JSON export, and a Godot 4 viewer. No pip required for the daemon.
+
+```
+chronosat_daemon.py  ──JSON──►  Godot chronosat_viewer
+                         │
+                         └──►  Aether Navigation / District 04901 spatial layers (future)
+```
 
 ```bash
 cd orbital_daemon
@@ -39,6 +47,7 @@ Modern satellite data (Landsat 8/9, Sentinel-2, NAIP, etc.) is abundant and high
 - Accurate knowledge of what satellites were operating on any given date
 - Practical tools to discover and retrieve real historical imagery
 - Clear bridges to 3D visualization and creative pipelines
+- A live orbital daemon for Godot demos on edge nodes (Penguin, Red Laptop, Synology)
 
 ## Features
 
@@ -108,7 +117,7 @@ Located in `examples/`:
 
 | Script | Purpose |
 |--------|---------|
-| `historical_waterville_timeline.py` | Timeline + pass estimation for Waterville, Maine (the location used in many modern pipelines) |
+| `historical_waterville_timeline.py` | Timeline + pass estimation for Waterville, Maine (04901 anchor) |
 | `export_real_mss_to_drive.py` | End-to-end: search real 1975 scenes and export GeoTIFF to Drive |
 | `feed_into_mesh_pipeline.py` | Shows how to adapt existing raster → PyVista mesh code for historical MSS data |
 
@@ -124,6 +133,21 @@ Typical creative/research flow:
 4. Generate 1975 vs 2025 comparison renders or time-lapse sequences
 
 The orbit module can be upgraded with real historical TLEs using Skyfield (you may already have this in your environment).
+
+## Sovereign Stack
+
+| Project | Role |
+|---------|------|
+| **[Aether Core](https://github.com/keithdickey207/aether)** | Brain hub — USD-4 protocol, RF lab, medical, Godot 4 bridge + Navigation station |
+| **[District 04901 Grid](https://github.com/keithdickey207/District_04901_Grid)** | Spatial C2 — React VM canvas, live UDP/WS telemetry mesh |
+| **[dickey-sovereign-core](https://github.com/keithdickey207/dickey-sovereign-core)** | Fusion + tactile physics streams |
+| **chronosat** (this repo) | Historical Landsat 1970–1981 + live orbital daemon + Godot viewer |
+| **[waterville-ar](https://github.com/keithdickey207/waterville-ar)** | Godot city builder |
+| **[04901-digital-twin](https://github.com/keithdickey207/04901-digital-twin)** | Godot digital twin |
+
+Sync: Tailscale + Syncthing + git worktrees — `~/SOVEREIGN_SYNC_QUICKSTART.md`
+
+Local overlay copy: `~/projects/chronosat/orbital_daemon/` (daemon + Godot viewer; sync target for this repo).
 
 ## Repository Structure
 
@@ -160,6 +184,7 @@ Particularly valuable areas right now:
 - Godot / Blender exporters
 - More example locations and creative visualizations
 - SGP4 / TLE ingestion for the live orbital daemon
+- UDP/JSON feed from `orbital_daemon` → District 04901 Grid spatial layer
 
 ## Links
 
